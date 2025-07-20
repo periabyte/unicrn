@@ -1,164 +1,152 @@
-import React from 'react';
-import { Pressable, Text, ActivityIndicator } from 'react-native';
-import { createStyleSheet, useStyles } from 'react-native-unistyles';
+import type React from 'react';
+import { ActivityIndicator, Pressable, Text } from 'react-native';
+import { StyleSheet, type UnistylesVariants } from 'react-native-unistyles';
 
-interface ButtonProps {
+type ButtonProps = UnistylesVariants<typeof styles> & {
   title: string;
   onPress?: () => void;
-  variant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link';
-  size?: 'default' | 'sm' | 'lg' | 'icon';
   disabled?: boolean;
   loading?: boolean;
   children?: React.ReactNode;
-}
+};
 
-export function Button({ 
-  title, 
-  onPress, 
-  variant = 'default', 
-  size = 'default', 
+export function Button({
+  title,
+  onPress,
+  variant = undefined,
+  size = undefined,
   disabled = false,
   loading = false,
-  children 
+  children,
 }: ButtonProps) {
-  const { styles } = useStyles(stylesheet);
-  
-  const variantStyle = styles[`variant_${variant}`];
-  const sizeStyle = styles[`size_${size}`];
-  
+  styles.useVariants({
+    variant,
+    size,
+    disabled,
+  });
+
   return (
     <Pressable
-      style={({ pressed }) => [
-        styles.base,
-        variantStyle,
-        sizeStyle,
-        disabled && styles.disabled,
-        pressed && !disabled && styles.pressed,
-      ]}
+      style={styles.container}
       onPress={onPress}
       disabled={disabled || loading}
     >
       {loading && (
-        <ActivityIndicator 
-          size="small" 
-          color={variant === 'outline' ? styles.variant_outline.color : '#ffffff'} 
+        <ActivityIndicator
+          size="small"
+          color="#ffffff"
           style={styles.loading}
         />
       )}
-      {children || (
-        <Text style={[
-          styles.text,
-          styles[`text_${variant}`],
-          styles[`textSize_${size}`],
-        ]}>
-          {title}
-        </Text>
-      )}
+      {children || <Text style={styles.text}>{title}</Text>}
     </Pressable>
   );
 }
 
-const stylesheet = createStyleSheet((theme) => ({
-  base: {
+const styles = StyleSheet.create((theme) => ({
+  container: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: theme.borderRadius.md,
-    borderWidth: 1,
+    borderWidth: theme.borderWidth.xs,
     borderColor: 'transparent',
+    variants: {
+      variant: {
+        default: {
+          backgroundColor: theme.colors.primary,
+          borderColor: theme.colors.primary,
+        },
+        destructive: {
+          backgroundColor: theme.colors.destructive,
+          borderColor: theme.colors.destructive,
+        },
+        outline: {
+          backgroundColor: 'transparent',
+          borderColor: theme.colors.border,
+        },
+        secondary: {
+          backgroundColor: theme.colors.secondary,
+          borderColor: theme.colors.secondary,
+        },
+        ghost: {
+          backgroundColor: 'transparent',
+          borderColor: 'transparent',
+        },
+        link: {
+          backgroundColor: 'transparent',
+          borderColor: 'transparent',
+        },
+      },
+      size: {
+        default: {
+          height: 40,
+          paddingHorizontal: theme.spacing.md,
+        },
+        sm: {
+          height: 36,
+          paddingHorizontal: theme.spacing.sm,
+        },
+        lg: {
+          height: 44,
+          paddingHorizontal: theme.spacing.lg,
+        },
+        icon: {
+          height: 40,
+          width: 40,
+          paddingHorizontal: 0,
+        },
+      },
+      disabled: {
+        true: {
+          opacity: 0.5,
+        },
+      },
+    },
   },
-  
-  // Variants
-  variant_default: {
-    backgroundColor: theme.colors.primary,
-    borderColor: theme.colors.primary,
-  },
-  variant_destructive: {
-    backgroundColor: theme.colors.destructive,
-    borderColor: theme.colors.destructive,
-  },
-  variant_outline: {
-    backgroundColor: 'transparent',
-    borderColor: theme.colors.border,
-  },
-  variant_secondary: {
-    backgroundColor: theme.colors.secondary,
-    borderColor: theme.colors.secondary,
-  },
-  variant_ghost: {
-    backgroundColor: 'transparent',
-    borderColor: 'transparent',
-  },
-  variant_link: {
-    backgroundColor: 'transparent',
-    borderColor: 'transparent',
-  },
-  
-  // Sizes
-  size_default: {
-    height: 40,
-    paddingHorizontal: theme.spacing.md,
-  },
-  size_sm: {
-    height: 36,
-    paddingHorizontal: theme.spacing.sm,
-  },
-  size_lg: {
-    height: 44,
-    paddingHorizontal: theme.spacing.lg,
-  },
-  size_icon: {
-    height: 40,
-    width: 40,
-    paddingHorizontal: 0,
-  },
-  
-  // Text styles
+
   text: {
     fontWeight: theme.fontWeight.medium,
     textAlign: 'center',
+    variants: {
+      variant: {
+        default: {
+          color: theme.colors.primaryForeground,
+        },
+        destructive: {
+          color: theme.colors.destructiveForeground,
+        },
+        outline: {
+          color: theme.colors.foreground,
+        },
+        secondary: {
+          color: theme.colors.secondaryForeground,
+        },
+        ghost: {
+          color: theme.colors.foreground,
+        },
+        link: {
+          color: theme.colors.foreground,
+          textDecorationLine: 'underline',
+        },
+      },
+      size: {
+        default: {
+          fontSize: theme.fontSize.sm,
+        },
+        sm: {
+          fontSize: theme.fontSize.xs,
+        },
+        lg: {
+          fontSize: theme.fontSize.base,
+        },
+        icon: {
+          fontSize: theme.fontSize.sm,
+        },
+      },
+    },
   },
-  text_default: {
-    color: theme.colors.primaryForeground,
-  },
-  text_destructive: {
-    color: theme.colors.destructiveForeground,
-  },
-  text_outline: {
-    color: theme.colors.foreground,
-  },
-  text_secondary: {
-    color: theme.colors.secondaryForeground,
-  },
-  text_ghost: {
-    color: theme.colors.foreground,
-  },
-  text_link: {
-    color: theme.colors.foreground,
-    textDecorationLine: 'underline',
-  },
-  
-  // Text sizes
-  textSize_default: {
-    fontSize: theme.fontSize.sm,
-  },
-  textSize_sm: {
-    fontSize: theme.fontSize.xs,
-  },
-  textSize_lg: {
-    fontSize: theme.fontSize.base,
-  },
-  textSize_icon: {
-    fontSize: theme.fontSize.sm,
-  },
-  
-  // States
-  disabled: {
-    opacity: 0.5,
-  },
-  pressed: {
-    opacity: 0.8,
-  },
+
   loading: {
     marginRight: theme.spacing.xs,
   },

@@ -1,0 +1,78 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [16, 18, 20]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify CLI functionality
+        run: |
+          echo "Testing CLI commands..."
+          chmod +x bin/unicrn.js
+          
+          # Test version
+          node bin/unicrn.js --version
+          
+          # Test help
+          node bin/unicrn.js --help
+          
+          # Test list components
+          node bin/unicrn.js list
+          
+          # Test list themes
+          node bin/unicrn.js themes
+
+      - name: Test CLI in clean directory
+        run: |
+          echo "Testing CLI initialization..."
+          mkdir -p /tmp/test-cli
+          cd /tmp/test-cli
+          
+          # Test init command
+          node $GITHUB_WORKSPACE/bin/unicrn.js init
+          
+          # Verify files were created
+          ls -la
+          test -d components/ui
+          test -f components/ui/index.ts
+          test -f index.ts
+          
+          echo "CLI test passed!"
+
+      - name: Verify package structure
+        run: |
+          echo "Verifying package contents..."
+          npm pack --dry-run
+          
+          # Check that all required files are included
+          test -f bin/unicrn.js
+          test -d components/ui
+          test -f unistyles.ts
+          test -f README.md
+          test -f package.json
+          
+          echo "Package structure verified!"
+
+      - name: Check for security vulnerabilities
+        run: npm audit --audit-level moderate

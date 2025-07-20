@@ -1,90 +1,75 @@
-import React from 'react';
+import type React from 'react';
+import type { FC } from 'react';
 import { View } from 'react-native';
-import { createStyleSheet, useStyles } from 'react-native-unistyles';
+import { StyleSheet, type UnistylesVariants } from 'react-native-unistyles';
 
-interface CardProps {
+interface CardProps extends UnistylesVariants<typeof styles> {
   children: React.ReactNode;
-  variant?: 'default' | 'elevated';
-  padding?: keyof typeof import('../../unistyles.config').lightTheme.spacing;
 }
 
-export function Card({ children, variant = 'default', padding = 'md' }: CardProps) {
-  const { styles } = useStyles(stylesheet);
-  
-  return (
-    <View style={[
-      styles.base,
-      styles[`variant_${variant}`],
-      { padding: styles.base.theme.spacing[padding] }
-    ]}>
-      {children}
-    </View>
-  );
-}
+export const Card: FC<CardProps> = ({
+  children,
+  variant,
+  padding = 'md',
+}: CardProps) => {
+  styles.useVariants({
+    variant,
+    padding,
+  });
 
-export function CardHeader({ children }: { children: React.ReactNode }) {
-  const { styles } = useStyles(stylesheet);
-  
-  return (
-    <View style={styles.header}>
-      {children}
-    </View>
-  );
-}
+  return <View style={styles.container}>{children}</View>;
+};
 
-export function CardContent({ children }: { children: React.ReactNode }) {
-  const { styles } = useStyles(stylesheet);
-  
-  return (
-    <View style={styles.content}>
-      {children}
-    </View>
-  );
-}
+export const CardHeader = ({ children }: { children: React.ReactNode }) => {
+  return <View style={styles.header}>{children}</View>;
+};
 
-export function CardFooter({ children }: { children: React.ReactNode }) {
-  const { styles } = useStyles(stylesheet);
-  
-  return (
-    <View style={styles.footer}>
-      {children}
-    </View>
-  );
-}
+export const CardContent = ({ children }: { children: React.ReactNode }) => {
+  return <View style={styles.content}>{children}</View>;
+};
 
-const stylesheet = createStyleSheet((theme) => ({
-  base: {
+export const CardFooter = ({ children }: { children: React.ReactNode }) => {
+  return <View style={styles.footer}>{children}</View>;
+};
+
+const styles = StyleSheet.create((theme) => ({
+  container: {
     backgroundColor: theme.colors.card,
     borderRadius: theme.borderRadius.lg,
-    borderWidth: 1,
+    borderWidth: theme.borderWidth.xs,
     borderColor: theme.colors.border,
-    theme,
+    variants: {
+      variant: {
+        elevated: {
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.1,
+          shadowRadius: 8,
+          elevation: 4,
+        },
+      },
+      padding: {
+        sm: {
+          padding: theme.spacing.sm,
+        },
+        md: {
+          padding: theme.spacing.md,
+        },
+        lg: {
+          padding: theme.spacing.lg,
+        },
+      },
+    },
   },
-  
-  variant_default: {
-    // shadowColor: '#000',
-    // shadowOffset: { width: 0, height: 1 },
-    // shadowOpacity: 0.05,
-    // shadowRadius: 2,
-    // elevation: 1,
-  },
-  
-  variant_elevated: {
-    // shadowColor: '#000',
-    // shadowOffset: { width: 0, height: 4 },
-    // shadowOpacity: 0.1,
-    // shadowRadius: 8,
-    // elevation: 4,
-  },
-  
+
   header: {
     marginBottom: theme.spacing.md,
   },
-  
+
   content: {
     flex: 1,
   },
-  
+
   footer: {
     marginTop: theme.spacing.md,
     flexDirection: 'row',

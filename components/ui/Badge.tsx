@@ -1,71 +1,213 @@
-import React from 'react';
-import { View, Text } from 'react-native';
-import { createStyleSheet, useStyles } from 'react-native-unistyles';
+import type React from 'react';
+import { Text, type TextProps, View, type ViewProps } from 'react-native';
+import { StyleSheet } from 'react-native-unistyles';
 
-interface BadgeProps {
+const styles = StyleSheet.create((theme) => ({
+  container: {
+    alignSelf: 'flex-start',
+    borderWidth: 1,
+    variants: {
+      variant: {
+        solid: {},
+        outline: {
+          backgroundColor: 'transparent',
+        },
+      },
+      size: {
+        sm: {
+          paddingHorizontal: theme.spacing.xs,
+          paddingVertical: 1,
+        },
+        md: {
+          paddingHorizontal: theme.spacing.sm,
+          paddingVertical: 2,
+        },
+        lg: {
+          paddingHorizontal: theme.spacing.md,
+          paddingVertical: 4,
+        },
+      },
+      theme: {
+        primary: {},
+        secondary: {},
+        destructive: {},
+      },
+      shape: {
+        pill: {
+          borderRadius: theme.borderRadius.full,
+        },
+        rounded: {
+          borderRadius: theme.borderRadius.md,
+        },
+        square: {
+          borderRadius: 0,
+        },
+      },
+    },
+    compoundVariants: [
+      {
+        variant: 'solid',
+        theme: 'primary',
+        styles: {
+          backgroundColor: theme.colors.primary,
+          borderColor: theme.colors.primary,
+        },
+      },
+      {
+        variant: 'solid',
+        theme: 'secondary',
+        styles: {
+          backgroundColor: theme.colors.secondary,
+          borderColor: theme.colors.secondary,
+        },
+      },
+      {
+        variant: 'solid',
+        theme: 'destructive',
+        styles: {
+          backgroundColor: theme.colors.destructive,
+          borderColor: theme.colors.destructive,
+        },
+      },
+      {
+        variant: 'outline',
+        theme: 'primary',
+        styles: {
+          borderColor: theme.colors.primary,
+        },
+      },
+      {
+        variant: 'outline',
+        theme: 'secondary',
+        styles: {
+          borderColor: theme.colors.secondary,
+        },
+      },
+      {
+        variant: 'outline',
+        theme: 'destructive',
+        styles: {
+          borderColor: theme.colors.destructive,
+        },
+      },
+    ],
+  },
+
+  text: {
+    fontWeight: theme.fontWeight.medium,
+    variants: {
+      size: {
+        sm: {
+          fontSize: theme.fontSize.xs,
+        },
+        md: {
+          fontSize: theme.fontSize.sm,
+        },
+        lg: {
+          fontSize: theme.fontSize.base,
+        },
+      },
+      variant: {
+        solid: {},
+        outline: {},
+      },
+      theme: {
+        primary: {},
+        secondary: {},
+        destructive: {},
+      },
+    },
+    compoundVariants: [
+      {
+        variant: 'solid',
+        theme: 'primary',
+        styles: {
+          color: theme.colors.primaryForeground,
+        },
+      },
+      {
+        variant: 'solid',
+        theme: 'secondary',
+        styles: {
+          color: theme.colors.secondaryForeground,
+        },
+      },
+      {
+        variant: 'solid',
+        theme: 'destructive',
+        styles: {
+          color: theme.colors.destructiveForeground,
+        },
+      },
+      {
+        variant: 'outline',
+        theme: 'primary',
+        styles: {
+          color: theme.colors.primary,
+        },
+      },
+      {
+        variant: 'outline',
+        theme: 'secondary',
+        styles: {
+          color: theme.colors.secondary,
+        },
+      },
+      {
+        variant: 'outline',
+        theme: 'destructive',
+        styles: {
+          color: theme.colors.destructive,
+        },
+      },
+    ],
+  },
+}));
+
+type BadgeProps = {
   children: React.ReactNode;
-  variant?: 'default' | 'secondary' | 'destructive' | 'outline';
-}
+  variant?: 'solid' | 'outline';
+  size?: 'sm' | 'md' | 'lg';
+  theme?: 'primary' | 'secondary' | 'destructive';
+  shape?: 'pill' | 'rounded' | 'square';
+  bg?: string;
+  color?: string;
+  style?: ViewProps['style'];
+  textStyle?: TextProps['style'];
+};
 
-export function Badge({ children, variant = 'default' }: BadgeProps) {
-  const { styles } = useStyles(stylesheet);
-  
+export function Badge({
+  children,
+  variant = 'solid',
+  size = 'md',
+  theme = 'primary',
+  shape = 'pill',
+  bg,
+  color,
+  style,
+  textStyle,
+}: BadgeProps) {
+  styles.useVariants({
+    variant,
+    size,
+    theme,
+    shape,
+  });
+
+  const containerStyle = [
+    styles.container,
+    bg && {
+      backgroundColor: variant === 'solid' ? bg : 'transparent',
+      borderColor: bg,
+    },
+    style,
+  ];
+
+  const finalTextStyle = [styles.text, color && { color }, textStyle];
+
   return (
-    <View style={[styles.base, styles[`variant_${variant}`]]}>
-      <Text style={[styles.text, styles[`text_${variant}`]]}>
-        {children}
-      </Text>
+    <View style={containerStyle}>
+      <Text style={finalTextStyle}>{children}</Text>
     </View>
   );
 }
-
-const stylesheet = createStyleSheet((theme) => ({
-  base: {
-    paddingHorizontal: theme.spacing.xs,
-    paddingVertical: 2,
-    borderRadius: theme.borderRadius.full,
-    alignSelf: 'flex-start',
-    borderWidth: 1,
-  },
-  
-  variant_default: {
-    backgroundColor: theme.colors.primary,
-    borderColor: theme.colors.primary,
-  },
-  
-  variant_secondary: {
-    backgroundColor: theme.colors.secondary,
-    borderColor: theme.colors.secondary,
-  },
-  
-  variant_destructive: {
-    backgroundColor: theme.colors.destructive,
-    borderColor: theme.colors.destructive,
-  },
-  
-  variant_outline: {
-    backgroundColor: 'transparent',
-    borderColor: theme.colors.border,
-  },
-  
-  text: {
-    fontSize: theme.fontSize.xs,
-    fontWeight: theme.fontWeight.medium,
-  },
-  
-  text_default: {
-    color: theme.colors.primaryForeground,
-  },
-  
-  text_secondary: {
-    color: theme.colors.secondaryForeground,
-  },
-  
-  text_destructive: {
-    color: theme.colors.destructiveForeground,
-  },
-  
-  text_outline: {
-    color: theme.colors.foreground,
-  },
-}));

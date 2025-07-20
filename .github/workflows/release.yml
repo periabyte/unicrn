@@ -1,0 +1,86 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version bump type'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+      pre-release:
+        description: 'Is this a pre-release?'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Bump version
+        run: |
+          npm version ${{ github.event.inputs.version }} --no-git-tag-version
+          echo "NEW_VERSION=$(node -p "require('./package.json').version")" >> $GITHUB_ENV
+
+      - name: Update package files
+        run: |
+          # Update version in CLI file if needed
+          sed -i "s/\.version('.*')/\.version('${{ env.NEW_VERSION }}')/g" bin/unicrn.js
+
+      - name: Commit version bump
+        run: |
+          git add .
+          git commit -m "chore: bump version to v${{ env.NEW_VERSION }}"
+          git push
+
+      - name: Create Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ env.NEW_VERSION }}
+          release_name: Release v${{ env.NEW_VERSION }}
+          body: |
+            ## What's Changed
+            
+            Release v${{ env.NEW_VERSION }}
+            
+            ### Installation
+            ```bash
+            npx unicrn@${{ env.NEW_VERSION }} init
+            ```
+            
+            ### Changes
+            - Version bump to ${{ env.NEW_VERSION }}
+            
+            **Full Changelog**: https://github.com/periabyte/unicrn/compare/v${{ env.PREVIOUS_VERSION }}...v${{ env.NEW_VERSION }}
+          draft: false
+          prerelease: ${{ github.event.inputs.pre-release == 'true' }}

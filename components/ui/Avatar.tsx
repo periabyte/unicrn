@@ -1,91 +1,107 @@
 import React from 'react';
-import { View, Text, Image } from 'react-native';
-import { createStyleSheet, useStyles } from 'react-native-unistyles';
+import {
+  Image,
+  type ImageProps,
+  Text,
+  View,
+  type ViewProps,
+} from 'react-native';
+import { StyleSheet } from 'react-native-unistyles';
+
+const styles = StyleSheet.create((theme) => ({
+  container: {
+    borderRadius: theme.borderRadius.full,
+    backgroundColor: theme.colors.muted,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+    variants: {
+      size: {
+        sm: {
+          width: 32,
+          height: 32,
+        },
+        md: {
+          width: 40,
+          height: 40,
+        },
+        lg: {
+          width: 48,
+          height: 48,
+        },
+        xl: {
+          width: 64,
+          height: 64,
+        },
+      },
+    },
+  },
+
+  image: {
+    width: '100%',
+    height: '100%',
+  },
+
+  fallback: {
+    color: theme.colors.mutedForeground,
+    fontWeight: theme.fontWeight.medium,
+    textAlign: 'center',
+    variants: {
+      size: {
+        sm: {
+          fontSize: theme.fontSize.xs,
+        },
+        md: {
+          fontSize: theme.fontSize.sm,
+        },
+        lg: {
+          fontSize: theme.fontSize.base,
+        },
+        xl: {
+          fontSize: theme.fontSize.lg,
+        },
+      },
+    },
+  },
+}));
 
 interface AvatarProps {
   src?: string;
   alt?: string;
   fallback?: string;
   size?: 'sm' | 'md' | 'lg' | 'xl';
+  style?: ViewProps['style'];
+  imageStyle?: ImageProps['style'];
 }
 
-export function Avatar({ src, alt, fallback, size = 'md' }: AvatarProps) {
-  const { styles } = useStyles(stylesheet);
+export function Avatar({
+  src,
+  alt,
+  fallback,
+  size = 'md',
+  style,
+  imageStyle,
+}: AvatarProps) {
   const [imageError, setImageError] = React.useState(false);
-  
+
+  styles.useVariants({
+    size,
+  });
+
   const showFallback = !src || imageError;
-  
+
   return (
-    <View style={[styles.base, styles[`size_${size}`]]}>
+    <View style={[styles.container, style]}>
       {!showFallback ? (
         <Image
           source={{ uri: src }}
-          style={styles.image}
+          style={[styles.image, imageStyle]}
           onError={() => setImageError(true)}
           accessibilityLabel={alt}
         />
       ) : (
-        <Text style={[styles.fallback, styles[`fallbackText_${size}`]]}>
-          {fallback || '?'}
-        </Text>
+        <Text style={styles.fallback}>{fallback || '?'}</Text>
       )}
     </View>
   );
 }
-
-const stylesheet = createStyleSheet((theme) => ({
-  base: {
-    borderRadius: theme.borderRadius.full,
-    backgroundColor: theme.colors.muted,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  
-  size_sm: {
-    width: 32,
-    height: 32,
-  },
-  
-  size_md: {
-    width: 40,
-    height: 40,
-  },
-  
-  size_lg: {
-    width: 48,
-    height: 48,
-  },
-  
-  size_xl: {
-    width: 64,
-    height: 64,
-  },
-  
-  image: {
-    width: '100%',
-    height: '100%',
-  },
-  
-  fallback: {
-    color: theme.colors.mutedForeground,
-    fontWeight: theme.fontWeight.medium,
-    textAlign: 'center',
-  },
-  
-  fallbackText_sm: {
-    fontSize: theme.fontSize.xs,
-  },
-  
-  fallbackText_md: {
-    fontSize: theme.fontSize.sm,
-  },
-  
-  fallbackText_lg: {
-    fontSize: theme.fontSize.base,
-  },
-  
-  fallbackText_xl: {
-    fontSize: theme.fontSize.lg,
-  },
-}));
