@@ -7,7 +7,7 @@ const https = require('https');
 
 program
   .name('unicrn')
-  .description('UNICRN CLI - Unistyles + Copy Paste React Native UI Components')
+  .description('UNICRN CLI - Unistyles + Components + React Native')
   .version('1.0.0');
 
 // Init command to set up project structure
@@ -15,7 +15,12 @@ program
   .command('init')
   .description('Initialize unicrn in your React Native project')
   .action(async () => {
-    await initProject();
+    try {
+      await initProject();
+    } catch (error) {
+      console.error('❌ Failed to initialize project:', error.message);
+      process.exit(1);
+    }
   });
 
 // Add component command
@@ -24,14 +29,19 @@ program
   .description('Add a component to your project')
   .argument('<components...>', 'component names to add')
   .action(async (components) => {
-    // Check if project is initialized
-    if (!isProjectInitialized()) {
-      console.error('❌ Project not initialized. Run "unicrn init" first.');
-      return;
-    }
+    try {
+      // Check if project is initialized
+      if (!isProjectInitialized()) {
+        console.error('❌ Project not initialized. Run "unicrn init" first.');
+        process.exit(1);
+      }
 
-    for (const component of components) {
-      await addComponent(component);
+      for (const component of components) {
+        await addComponent(component);
+      }
+    } catch (error) {
+      console.error('❌ Failed to add components:', error.message);
+      process.exit(1);
     }
   });
 
@@ -40,7 +50,12 @@ program
   .command('list')
   .description('List all available components')
   .action(async () => {
-    await listComponents();
+    try {
+      await listComponents();
+    } catch (error) {
+      console.error('❌ Failed to list components:', error.message);
+      process.exit(1);
+    }
   });
 
 // Theme commands
@@ -49,14 +64,24 @@ program
   .description('Set the active theme')
   .argument('<theme>', 'theme name to set')
   .action(async (theme) => {
-    await setTheme(theme);
+    try {
+      await setTheme(theme);
+    } catch (error) {
+      console.error('❌ Failed to set theme:', error.message);
+      process.exit(1);
+    }
   });
 
 program
   .command('themes')
   .description('List all available themes')
   .action(async () => {
-    await listThemes();
+    try {
+      await listThemes();
+    } catch (error) {
+      console.error('❌ Failed to list themes:', error.message);
+      process.exit(1);
+    }
   });
 
 // Components registry
@@ -274,6 +299,7 @@ import './unistyles.ts';
     );
   } catch (error) {
     console.error('❌ Failed to initialize project:', error.message);
+    throw error;
   }
 }
 
@@ -283,7 +309,7 @@ async function addComponent(componentName) {
   if (!component) {
     console.error(`❌ Component "${componentName}" not found.`);
     console.log(`Available components: ${Object.keys(components).join(', ')}`);
-    return;
+    throw new Error(`Component "${componentName}" not found`);
   }
 
   try {
@@ -328,6 +354,7 @@ async function addComponent(componentName) {
     }
   } catch (error) {
     console.error(`❌ Failed to add ${component.name}:`, error.message);
+    throw error;
   }
 }
 
@@ -421,7 +448,7 @@ async function setTheme(themeName) {
   if (!theme) {
     console.error(`❌ Theme "${themeName}" not found.`);
     console.log(`Available themes: ${Object.keys(themes).join(', ')}`);
-    return;
+    throw new Error(`Theme "${themeName}" not found`);
   }
 
   try {
@@ -432,6 +459,7 @@ async function setTheme(themeName) {
     console.log(`📁 Updated: unistyles.ts`);
   } catch (error) {
     console.error(`❌ Failed to set theme:`, error.message);
+    throw error;
   }
 }
 
