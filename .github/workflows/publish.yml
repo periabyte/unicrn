@@ -102,7 +102,7 @@ jobs:
             exit 1
           fi
 
-      - name: Create success comment on release
+      - name: Update release with NPM publish success
         uses: actions/github-script@v7
         with:
           script: |
@@ -110,22 +110,42 @@ jobs:
             const version = packageJson.version;
             const name = packageJson.name;
             
-            github.rest.repos.createReleaseComment({
+            // Get the current release
+            const release = await github.rest.repos.getReleaseByTag({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              release_id: context.payload.release.id,
-              body: `🎉 **Successfully published to NPM!**
-              
-              📦 **Package:** \`${name}@${version}\`
-              🔗 **NPM:** https://www.npmjs.com/package/${name}
-              
-              **Installation:**
-              \`\`\`bash
-              npx ${name}@latest init
-              \`\`\`
-              
-              **Or install globally:**
-              \`\`\`bash
-              npm install -g ${name}@${version}
-              \`\`\``
-            })
+              tag: `v${version}`
+            });
+            
+            // Update the release body to include NPM publish success
+            const npmSuccessNote = `
+            
+            ---
+            
+            ## 📦 NPM Package Published Successfully!
+            
+            🎉 **Package:** [\`${name}@${version}\`](https://www.npmjs.com/package/${name})
+            
+            **Quick Install:**
+            \`\`\`bash
+            npx ${name}@latest init
+            \`\`\`
+            
+            **Global Install:**
+            \`\`\`bash
+            npm install -g ${name}@${version}
+            \`\`\`
+            
+            Published at: ${new Date().toISOString()}`;
+            
+            // Update the release with NPM info
+            await github.rest.repos.updateRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              release_id: release.data.id,
+              body: release.data.body + npmSuccessNote
+            });
+            
+            console.log(`✅ Updated release with NPM publish success!`);
+            console.log(`📦 Package: https://www.npmjs.com/package/${name}`);
+            console.log(`🚀 Install with: npx ${name}@latest init`);
