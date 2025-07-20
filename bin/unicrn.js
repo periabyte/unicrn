@@ -201,7 +201,7 @@ const themes = {
 };
 
 // Base URL for fetching components
-const BASE_URL = 'https://raw.githubusercontent.com/periabyte/unicn/main';
+const BASE_URL = 'https://raw.githubusercontent.com/periabyte/unicrn/main';
 
 function isProjectInitialized() {
   return (
@@ -280,7 +280,10 @@ import './unistyles.ts';
       } catch {
         console.log('⚠️  Could not download unistyles.ts automatically.');
         console.log(
-          '   Please visit: https://github.com/periabyte/unicn/blob/main/unistyles.ts'
+          '   Please visit: https://github.com/periabyte/unicrn/blob/main/unistyles.ts'
+        );
+        throw new Error(
+          'Failed to download unistyles.ts. Please copy it manually.'
         );
       }
     }
