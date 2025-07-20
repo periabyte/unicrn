@@ -8,7 +8,7 @@ const https = require('https');
 program
   .name('unicrn')
   .description('UNICRN CLI - Unistyles + Components + React Native')
-  .version('1.0.0');
+  .version('1.0.1');
 
 // Init command to set up project structure
 program
