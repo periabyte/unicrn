@@ -271,19 +271,48 @@ import './unistyles.ts';
       }
     }
 
-    // Download unistyles.ts if it doesn't exist
+    // Copy unistyles.ts if it doesn't exist
     const unistylesPath = path.join(process.cwd(), 'unistyles.ts');
     if (!fs.existsSync(unistylesPath)) {
       try {
-        await downloadFile('unistyles.ts');
-        console.log('🎨 Downloaded unistyles.ts theme configuration');
+        let copied = false;
+        
+        // First try to copy from local package installation
+        try {
+          const packageDir = path.dirname(require.resolve('unicrn/package.json'));
+          const sourceUnistylesPath = path.join(packageDir, 'unistyles.ts');
+          
+          if (fs.existsSync(sourceUnistylesPath)) {
+            fs.copyFileSync(sourceUnistylesPath, unistylesPath);
+            console.log('🎨 Copied unistyles.ts theme configuration');
+            copied = true;
+          }
+        } catch {
+          // Package not found, try local development path
+        }
+        
+        // If not found, try from current directory (local development)
+        if (!copied) {
+          const localUnistylesPath = path.join(__dirname, '..', 'unistyles.ts');
+          if (fs.existsSync(localUnistylesPath)) {
+            fs.copyFileSync(localUnistylesPath, unistylesPath);
+            console.log('🎨 Copied unistyles.ts theme configuration');
+            copied = true;
+          }
+        }
+        
+        // Final fallback to download
+        if (!copied) {
+          await downloadFile('unistyles.ts');
+          console.log('🎨 Downloaded unistyles.ts theme configuration');
+        }
       } catch {
-        console.log('⚠️  Could not download unistyles.ts automatically.');
+        console.log('⚠️  Could not copy unistyles.ts automatically.');
         console.log(
           '   Please visit: https://github.com/periabyte/unicrn/blob/main/unistyles.ts'
         );
         throw new Error(
-          'Failed to download unistyles.ts. Please copy it manually.'
+          'Failed to copy unistyles.ts. Please copy it manually.'
         );
       }
     }
@@ -324,14 +353,56 @@ async function addComponent(componentName) {
       fs.mkdirSync(uiDir, { recursive: true });
     }
 
-    // Try to download component files
-    let downloadSuccess = false;
+    // Try to copy component files locally first, then download as fallback
+    let copySuccess = false;
     for (const file of component.files) {
       try {
-        await downloadFile(file);
-        downloadSuccess = true;
+        let fileCopied = false;
+        
+        // First try to copy from local package installation
+        try {
+          const packageDir = path.dirname(require.resolve('unicrn/package.json'));
+          const sourceFilePath = path.join(packageDir, file);
+          const targetFilePath = path.join(process.cwd(), file);
+          
+          if (fs.existsSync(sourceFilePath)) {
+            // Create directory if it doesn't exist
+            const targetDir = path.dirname(targetFilePath);
+            if (!fs.existsSync(targetDir)) {
+              fs.mkdirSync(targetDir, { recursive: true });
+            }
+            
+            fs.copyFileSync(sourceFilePath, targetFilePath);
+            fileCopied = true;
+            copySuccess = true;
+          }
+        } catch {
+          // Package not found, try local development path
+        }
+        
+        // If not found, try from local development directory
+        if (!fileCopied) {
+          const localFilePath = path.join(__dirname, '..', file);
+          if (fs.existsSync(localFilePath)) {
+            const targetFilePath = path.join(process.cwd(), file);
+            const targetDir = path.dirname(targetFilePath);
+            if (!fs.existsSync(targetDir)) {
+              fs.mkdirSync(targetDir, { recursive: true });
+            }
+            
+            fs.copyFileSync(localFilePath, targetFilePath);
+            fileCopied = true;
+            copySuccess = true;
+          }
+        }
+        
+        // Final fallback to download
+        if (!fileCopied) {
+          await downloadFile(file);
+          copySuccess = true;
+        }
       } catch {
-        console.log(`⚠️  Could not download ${file} automatically.`);
+        console.log(`⚠️  Could not copy ${file} automatically.`);
         console.log(`   Please copy it manually from: ${BASE_URL}/${file}`);
       }
     }
@@ -339,7 +410,7 @@ async function addComponent(componentName) {
     // Update index.ts
     await updateIndexFile();
 
-    if (downloadSuccess) {
+    if (copySuccess) {
       console.log(`✅ Successfully added ${component.name} component!`);
     } else {
       console.log(
