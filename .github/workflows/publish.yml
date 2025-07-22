@@ -45,10 +45,13 @@ jobs:
           node bin/unicrn.js --version
           echo ""
           echo "📁 Checking components..."
-          ls -la components/ui/
+          ls -la lib/components/ui/
+          echo ""
+          echo "🪝 Checking hooks..."
+          ls -la lib/hooks/
           echo ""
           echo "🎨 Checking unistyles.ts..."
-          ls -la unistyles.ts
+          ls -la lib/unistyles.ts
 
       - name: Run tests (if any)
         run: |

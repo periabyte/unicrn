@@ -55,8 +55,19 @@ jobs:
           # Verify files were created
           ls -la
           test -d components/ui
+          test -d components/hooks
           test -f components/ui/index.ts
+          test -f components/hooks/index.ts
+          test -f components/unistyles.ts
           test -f index.ts
+          
+          # Test adding a component (dry run by checking list)
+          echo "Testing component addition..."
+          node $GITHUB_WORKSPACE/bin/unicrn.js list | grep -q "button"
+          
+          # Test adding a hook (dry run by checking list)
+          echo "Testing hook listing..."
+          node $GITHUB_WORKSPACE/bin/unicrn.js list | grep -q "usedisclose"
           
           echo "CLI test passed!"
 
@@ -67,10 +78,20 @@ jobs:
           
           # Check that all required files are included
           test -f bin/unicrn.js
-          test -d components/ui
-          test -f unistyles.ts
+          test -d lib/components/ui
+          test -d lib/hooks
+          test -f lib/unistyles.ts
+          test -f lib/index.ts
           test -f README.md
           test -f package.json
+          
+          # Verify specific component files exist
+          test -f lib/components/ui/Button.tsx
+          test -f lib/components/ui/Card.tsx
+          test -f lib/components/ui/index.ts
+          
+          # Verify hook files exist
+          test -f lib/hooks/useDisclose.ts
           
           echo "Package structure verified!"
 
