@@ -3,6 +3,12 @@ name: Publish to NPM
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish (leave empty for package.json version)'
+        required: false
+        type: string
 
 jobs:
   publish:
@@ -13,6 +19,21 @@ jobs:
       id-token: write
 
     steps:
+      - name: Determine trigger
+        run: |
+          if [ "${{ github.event_name }}" = "release" ]; then
+            echo "🚀 Triggered by release: ${{ github.event.release.tag_name }}"
+            echo "RELEASE_VERSION=${{ github.event.release.tag_name }}" >> $GITHUB_ENV
+          elif [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            if [ -n "${{ github.event.inputs.version }}" ]; then
+              echo "🚀 Triggered manually with version: ${{ github.event.inputs.version }}"
+              echo "RELEASE_VERSION=${{ github.event.inputs.version }}" >> $GITHUB_ENV
+            else
+              echo "🚀 Triggered manually, using package.json version"
+              echo "RELEASE_VERSION=" >> $GITHUB_ENV
+            fi
+          fi
+
       - name: Checkout code
         uses: actions/checkout@v4
 

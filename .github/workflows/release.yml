@@ -111,22 +111,35 @@ jobs:
           echo "✅ Version bump committed and tagged"
 
       - name: Create GitHub Release
-        uses: actions/create-release@v1
+        id: create_release
+        uses: actions/github-script@v7
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NEW_VERSION: ${{ env.NEW_VERSION }}
+          CURRENT_VERSION: ${{ env.CURRENT_VERSION }}
+          CHANGELOG: ${{ env.CHANGELOG }}
+          IS_PRERELEASE: ${{ github.event.inputs.pre-release == 'true' }}
         with:
-          tag_name: v${{ env.NEW_VERSION }}
-          release_name: UNICRN v${{ env.NEW_VERSION }}
-          body: |
-            ${{ env.CHANGELOG }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const newVersion = process.env.NEW_VERSION;
+            const currentVersion = process.env.CURRENT_VERSION;
+            const changelog = process.env.CHANGELOG;
+            const isPrerelease = process.env.IS_PRERELEASE === 'true';
+            
+            const { data: release } = await github.rest.repos.createRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag_name: `v${newVersion}`,
+              name: `UNICRN v${newVersion}`,
+              body: `${changelog}
             
             ---
             
             ## 🚀 Installation
             
-            ```bash
-            npx unicrn@${{ env.NEW_VERSION }} init
-            ```
+            \`\`\`bash
+            npx unicrn@${newVersion} init
+            \`\`\`
             
             ## 📦 What's UNICRN?
             
@@ -134,27 +147,37 @@ jobs:
             
             ## 📋 Quick Start
             
-            ```bash
+            \`\`\`bash
             # Initialize in your React Native project
             npx unicrn@latest init
             
             # Install dependencies
             npm install react-native-unistyles react-native-reanimated expo-router
             
-            # Add components
-            npx unicrn@latest add button card input
-            ```
+            # Add components and hooks
+            npx unicrn@latest add button card usedisclose
+            \`\`\`
             
-            **Full Changelog**: https://github.com/periabyte/unicrn/compare/${{ env.CURRENT_VERSION }}...v${{ env.NEW_VERSION }}
-          draft: false
-          prerelease: ${{ github.event.inputs.pre-release == 'true' }}
+            **Full Changelog**: https://github.com/periabyte/unicrn/compare/${currentVersion}...v${newVersion}`,
+              draft: false,
+              prerelease: isPrerelease
+            });
+            
+            console.log(`✅ Release created: ${release.html_url}`);
+            console.log(`🎯 Release ID: ${release.id}`);
+            console.log(`📋 Release Type: ${isPrerelease ? 'Pre-release' : 'Release'}`);
+            console.log(`🔔 This should trigger the publish workflow automatically`);
+            core.setOutput('release_id', release.id);
+            core.setOutput('release_url', release.html_url);
 
       - name: Release Summary
         run: |
           echo "🎉 Release Summary:"
           echo "📦 Package: unicrn"
-          echo "🏷️  Version: v${{ env.NEW_VERSION }}"
-          echo "🔗 Release: https://github.com/periabyte/unicrn/releases/tag/v${{ env.NEW_VERSION }}"
+          NEW_VERSION=$(node -p "require('./package.json').version")
+          echo "🏷️  Version: v$NEW_VERSION"
+          echo "🔗 Release: https://github.com/periabyte/unicrn/releases/tag/v$NEW_VERSION"
           echo ""
-          echo "🚀 The publish workflow will now automatically publish to NPM!"
+          echo "🚀 The publish workflow should automatically trigger!"
           echo "⏱️  This may take a few minutes to complete."
+          echo "🔍 Check the Actions tab to monitor the publish workflow."
