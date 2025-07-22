@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable } from 'react-native';
+import { Pressable, type ViewStyle } from 'react-native';
 import Animated, {
   interpolateColor,
   useAnimatedStyle,
@@ -14,6 +14,7 @@ interface SwitchProps {
   onValueChange: (value: boolean) => void;
   disabled?: boolean;
   size?: 'sm' | 'md';
+  style?: ViewStyle;
 }
 
 export function Switch({
@@ -21,6 +22,7 @@ export function Switch({
   onValueChange,
   disabled = false,
   size = 'md',
+  style,
 }: SwitchProps) {
   const animatedValue = useSharedValue(value ? 1 : 0);
   const theme = useAnimatedTheme();
@@ -78,7 +80,7 @@ export function Switch({
   }, [disabled, onValueChange, value]);
 
   return (
-    <Pressable onPress={handlePress} disabled={disabled}>
+    <Pressable onPress={handlePress} disabled={disabled} style={style}>
       <Animated.View
         style={[
           styles.track,

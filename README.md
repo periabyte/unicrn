@@ -1,71 +1,102 @@
-# UNICRN CLI
+# UNICRN Component Library
 
-A CLI tool for adding React Native UI components inspired by shadcn/ui, built with React Native Unistyles. Copy and paste beautiful, customizable components into your React Native projects.
+A modern React Native component library built with Unistyles 3.0, featuring beautiful, customizable components and hooks with performance optimization. Install components and hooks individually via CLI for optimal bundle size.
 
 ## Features
 
-- 🎨 **Beautiful Components** - 10+ professionally designed components
-- 🛠️ **CLI Tool** - Install components individually to keep bundle size small
-- 🎭 **Theming System** - Powerful theming with React Native Unistyles
-- 📱 **Cross Platform** - Components work on iOS, Android, and Web
-- 🌙 **Dark Mode** - Built-in support for light and dark themes
-- 📖 **Copy & Paste** - Add only the components you need
+- 🎨 **Modern Design**: Clean, beautiful components following modern design principles
+- ⚡ **Performance Optimized**: Built with Unistyles 3.0 for optimal performance
+- 🎯 **TypeScript First**: Fully typed components and hooks with excellent developer experience
+- 📱 **React Native**: Designed specifically for React Native applications
+- 🎭 **Variant System**: Flexible component variants for different use cases
+- 🎨 **Customizable**: Easy to customize colors, sizes, and styles
+- 📦 **CLI-Based**: Install only the components and hooks you need
+- ⚙️ **Configurable**: Customize installation paths and preferences
+- 🪝 **Hooks Included**: Useful React hooks for common patterns
 
 ## Quick Start
 
 ```bash
 # Initialize unicrn in your React Native project
-npx unicrn@latest init
+npx unicrn init
 
 # Install required dependencies
 npm install react-native-unistyles react-native-reanimated expo-router
 
 # Add components as needed
-npx unicrn@latest add button card input
+npx unicrn add button card input
+
+# Add hooks as needed
+npx unicrn add usedisclose
 
 # Import and use in your app
-import { Button, Card } from '@/components/ui';
+import { Button, Card } from './components/ui';
+import { useDisclose } from './components/hooks';
 ```
 
 ## CLI Commands
 
 ### Initialize Project
+
 ```bash
-npx unicrn@latest init
+npx unicrn init
 ```
+
 Creates:
 - `components/ui/` directory for your UI components
+- `components/hooks/` directory for your React hooks
 - `components/ui/index.ts` for component exports
+- `components/hooks/index.ts` for hook exports
+- `components/unistyles.ts` theme configuration
 - `index.ts` entry point with Expo Router and Unistyles setup
-- Downloads `unistyles.ts` theme configuration
 
-### Add Components
+### Add Components and Hooks
+
 ```bash
 # Add single component
-npx unicrn@latest add button
+npx unicrn add button
 
 # Add multiple components
-npx unicrn@latest add button card input badge
+npx unicrn add button card input badge
+
+# Add hooks
+npx unicrn add usedisclose
+
+# Mix components and hooks
+npx unicrn add button usedisclose card
+```
+
+### Remove Components and Hooks
+
+```bash
+# Remove single component or hook
+npx unicrn remove button
+
+# Remove multiple items
+npx unicrn remove button card usedisclose
 ```
 
 ### Manage Themes
+
 ```bash
 # Set theme
-npx unicrn@latest theme dark
+npx unicrn theme dark
 
 # List available themes
-npx unicrn@latest themes
+npx unicrn themes
 ```
 
-### List Components
+### List Available Items
+
 ```bash
-# List all available components
-npx unicrn@latest list
+# List all available components and hooks
+npx unicrn list
 ```
 
 ### Get Help
+
 ```bash
-npx unicrn@latest --help
+npx unicrn --help
 ```
 
 ## Available Components
@@ -82,6 +113,10 @@ npx unicrn@latest --help
 - **OTPInput** - One-time password input
 - **Radio** - Radio button groups
 
+## Available Hooks
+
+- **useDisclose** - Hook for managing disclosure state (open/close) for modals, dialogs, etc.
+
 ## Available Themes
 
 - **Default** - Clean light theme
@@ -94,9 +129,12 @@ npx unicrn@latest --help
 ```tsx
 import React from 'react';
 import { View } from 'react-native';
-import { Button, Card, CardContent, CardHeader, Typography } from '@/components/ui';
+import { Button, Card, CardContent, CardHeader, Typography } from './components/ui';
+import { useDisclose } from './components/hooks';
 
 export default function App() {
+  const { isOpen, onOpen, onClose } = useDisclose();
+
   return (
     <View style={{ flex: 1, padding: 20 }}>
       <Card>
@@ -105,13 +143,13 @@ export default function App() {
         </CardHeader>
         <CardContent>
           <Typography variant="p">
-            Get started with beautiful React Native components.
+            Get started with beautiful React Native components and hooks.
           </Typography>
           <Button 
             variant="default" 
-            onPress={() => console.log('Pressed!')}
+            onPress={onOpen}
           >
-            Get Started
+            Open Dialog
           </Button>
         </CardContent>
       </Card>
@@ -134,118 +172,40 @@ The CLI will prompt you to install these dependencies:
 npm install react-native-unistyles react-native-reanimated expo-router lucide-react-native
 ```
 
-## License
+## Configuration
 
-MIT
+The CLI uses a `unicrn.config.json` file for configuration:
 
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## Support
-
-- [GitHub Issues](https://github.com/periabyte/unicrn/issues)
-- [Documentation](https://github.com/periabyte/unicrn)
-
-## Manual Installation
-
-If you prefer to install dependencies manually:
-
-```bash
-# Install the required dependencies
-npm install react-native-unistyles react-native-reanimated react-native-svg lucide-react-native
-
-# For iOS, run pod install
-cd ios && pod install
-```
-
-## Quick Start
-
-1. **Initialize your React Native Expo project with unicrn**:
-
-```bash
-# Initialize unicrn in your project
-npx unicrn@latest init
-```
-
-This will create:
-- `components/ui/` directory for your UI components
-- `components/ui/index.ts` for component exports
-- `index.ts` entry point with Expo Router and Unistyles setup
-- Download `unistyles.ts` theme configuration
-
-2. **Install required dependencies**:
-
-```bash
-npm install react-native-unistyles react-native-reanimated expo-router
-```
-
-3. **Add components as needed**:
-
-```bash
-npx unicrn@latest add button card input
-```
-
-4. **Import and use components**:
-
-```typescript
-import { Button, Card, CardContent } from '@/components/ui';
-
-export default function App() {
-  return (
-    <Card>
-      <CardContent>
-        <Button title="Get Started" onPress={() => {}} />
-      </CardContent>
-    </Card>
-  );
+```json
+{
+  "componentsFolder": "components"
 }
 ```
 
-## CLI Usage
+You can customize the installation directory by modifying this file.
 
-The CLI tool helps you manage components and themes:
+## Hook Documentation
 
-```bash
-# Install a component
-rnui add button
+### useDisclose
 
-# Install multiple components
-rnui add button card input
+A hook for managing disclosure state (open/close) for modals, dialogs, drawers, etc.
 
-# Set theme
-rnui theme dark
+```tsx
+import { useDisclose } from './components/hooks';
 
-# List available components
-rnui list
+function MyComponent() {
+  const { isOpen, onOpen, onClose, onToggle } = useDisclose();
 
-# Show available themes
-rnui themes
-
-# Show installed components
-rnui installed
-
-# Get help
-rnui help
+  return (
+    <View>
+      <Button onPress={onOpen}>Open Modal</Button>
+      <Modal visible={isOpen} onRequestClose={onClose}>
+        {/* Modal content */}
+      </Modal>
+    </View>
+  );
+}
 ```
-
-## Available Components
-
-- **Button** - Various button variants and sizes
-- **Card** - Container with header, content, and footer
-- **Input** - Text input with validation states
-- **Badge** - Small status indicators
-- **Avatar** - User profile images with fallbacks
-- **Switch** - Toggle control with smooth animations
-- **Text** - Flexible text component with styling variants
-- **Heading** - Semantic heading components (H1-H6)
-- **Typography** - Unified typography system with semantic components (H1-H6, Text, Lead, Muted, Code, Blockquote) and size variants
-- **Dialog** - Modal dialog component with backdrop and animations
-- **Checkbox** - Checkbox input with multiple sizes and variants
-- **Radio** - Radio button group component for single selection
-- **OTPInput** - One-time password input component with multiple digits
-
-> **Note on Carousel**: For carousel functionality, we recommend using [react-native-carousel](https://rn-carousel.dev/) which provides better performance and platform-specific optimizations. See [docs/CAROUSEL.md](docs/CAROUSEL.md) for details.
 
 ## Theming
 
@@ -312,7 +272,13 @@ Each component is fully typed and includes comprehensive props:
 ## Development
 
 ```bash
-# Start the development server
+# Clone the repository
+git clone https://github.com/periabyte/unicrn.git
+
+# Install dependencies
+npm install
+
+# Start development server
 npm run dev
 
 # Build for web

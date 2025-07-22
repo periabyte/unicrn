@@ -45,6 +45,28 @@ program
     }
   });
 
+// Remove component command
+program
+  .command('remove')
+  .description('Remove a component from your project')
+  .argument('<components...>', 'component names to remove')
+  .action(async (components) => {
+    try {
+      // Check if project is initialized
+      if (!isProjectInitialized()) {
+        console.error('❌ Project not initialized. Run "unicrn init" first.');
+        process.exit(1);
+      }
+
+      for (const component of components) {
+        await removeComponent(component);
+      }
+    } catch (error) {
+      console.error('❌ Failed to remove components:', error.message);
+      process.exit(1);
+    }
+  });
+
 // List components command
 program
   .command('list')
@@ -90,70 +112,76 @@ const components = {
     name: 'Button',
     description: 'Displays a button or a component that looks like a button.',
     dependencies: ['react-native-unistyles'],
-    files: ['components/ui/Button.tsx'],
+    files: ['lib/components/ui/Button.tsx'],
   },
   card: {
     name: 'Card',
     description: 'Displays a card with header, content, and footer.',
     dependencies: ['react-native-unistyles'],
-    files: ['components/ui/Card.tsx'],
+    files: ['lib/components/ui/Card.tsx'],
   },
   input: {
     name: 'Input',
     description:
       'Displays a form input field or a component that looks like an input field.',
     dependencies: ['react-native-unistyles'],
-    files: ['components/ui/Input.tsx'],
+    files: ['lib/components/ui/Input.tsx'],
   },
   badge: {
     name: 'Badge',
     description: 'Displays a badge or a component that looks like a badge.',
     dependencies: ['react-native-unistyles'],
-    files: ['components/ui/Badge.tsx'],
+    files: ['lib/components/ui/Badge.tsx'],
   },
   avatar: {
     name: 'Avatar',
     description: 'An image element with a fallback for representing the user.',
     dependencies: ['react-native-unistyles'],
-    files: ['components/ui/Avatar.tsx'],
+    files: ['lib/components/ui/Avatar.tsx'],
   },
   switch: {
     name: 'Switch',
     description:
       'A control that allows the user to toggle between checked and not checked.',
     dependencies: ['react-native-unistyles', 'react-native-reanimated'],
-    files: ['components/ui/Switch.tsx'],
+    files: ['lib/components/ui/Switch.tsx'],
   },
   typography: {
     name: 'Typography',
     description:
       'Unified typography component with semantic variants like shadcn/ui.',
     dependencies: ['react-native-unistyles'],
-    files: ['components/ui/Typography.tsx'],
+    files: ['lib/components/ui/Typography.tsx'],
   },
   dialog: {
     name: 'Dialog',
     description: 'Modal dialog component with backdrop and animations.',
     dependencies: ['react-native-unistyles', 'lucide-react-native'],
-    files: ['components/ui/Dialog.tsx'],
+    files: ['lib/components/ui/Dialog.tsx'],
   },
   checkbox: {
     name: 'Checkbox',
     description: 'Checkbox input with multiple sizes and variants.',
     dependencies: ['react-native-unistyles', 'lucide-react-native'],
-    files: ['components/ui/Checkbox.tsx'],
+    files: ['lib/components/ui/Checkbox.tsx'],
   },
   otpinput: {
     name: 'OTPInput',
     description: 'One-time password input component with multiple digits.',
     dependencies: ['react-native-unistyles'],
-    files: ['components/ui/OTPInput.tsx'],
+    files: ['lib/components/ui/OTPInput.tsx'],
   },
   radio: {
     name: 'Radio',
     description: 'Radio button group component for single selection.',
     dependencies: ['react-native-unistyles'],
-    files: ['components/ui/Radio.tsx'],
+    files: ['lib/components/ui/Radio.tsx'],
+  },
+  usedisclose: {
+    name: 'useDisclose',
+    description: 'Hook for managing disclosure state (open/close) for modals, dialogs, etc.',
+    dependencies: [],
+    files: ['lib/hooks/useDisclose.ts'],
   },
 };
 
@@ -204,10 +232,13 @@ const themes = {
 const BASE_URL = 'https://raw.githubusercontent.com/periabyte/unicrn/main';
 
 function isProjectInitialized() {
+  const config = loadConfig();
+  const componentsFolder = config.componentsFolder;
+  
   return (
-    fs.existsSync(path.join(process.cwd(), 'unistyles.ts')) ||
-    fs.existsSync(path.join(process.cwd(), 'components', 'ui')) ||
-    fs.existsSync(path.join(process.cwd(), 'index.ts'))
+    fs.existsSync(path.join(process.cwd(), componentsFolder, 'unistyles.ts')) ||
+    fs.existsSync(path.join(process.cwd(), componentsFolder, 'ui')) ||
+    fs.existsSync(path.join(process.cwd(), 'unicrn.config.json'))
   );
 }
 
@@ -215,27 +246,117 @@ async function initProject() {
   console.log('🚀 Initializing unicrn in your project...');
 
   try {
-    // Create components/ui directory
-    const uiDir = path.join(process.cwd(), 'components', 'ui');
-    if (!fs.existsSync(uiDir)) {
-      fs.mkdirSync(uiDir, { recursive: true });
-      console.log('📁 Created components/ui directory');
+    // First, create unicrn.config.json config file if it doesn't exist
+    const configPath = path.join(process.cwd(), 'unicrn.config.json');
+    
+    if (!fs.existsSync(configPath)) {
+      console.log('🔧 Creating unicrn.config.json configuration...');
+      
+      const config = {
+        "componentsFolder": "components"
+      };
+      
+      fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+      console.log('✅ Created unicrn.config.json');
+    } else {
+      console.log('📄 Using existing unicrn.config.json');
     }
 
-    // Create components/ui/index.ts file
+    // Load configuration
+    const config = loadConfig();
+    
+    // Create components folder and UI subdirectory
+    const componentsDir = path.join(process.cwd(), config.componentsFolder);
+    const uiDir = path.join(componentsDir, 'ui');
+    const hooksDir = path.join(componentsDir, 'hooks');
+    
+    if (!fs.existsSync(componentsDir)) {
+      fs.mkdirSync(componentsDir, { recursive: true });
+      console.log(`📁 Created ${config.componentsFolder} directory`);
+    }
+
+    if (!fs.existsSync(uiDir)) {
+      fs.mkdirSync(uiDir, { recursive: true });
+      console.log(`📁 Created ${config.componentsFolder}/ui directory`);
+    }
+
+    if (!fs.existsSync(hooksDir)) {
+      fs.mkdirSync(hooksDir, { recursive: true });
+      console.log(`📁 Created ${config.componentsFolder}/hooks directory`);
+    }
+
+    // Create UI index.ts file (empty initially)
     const componentIndexPath = path.join(uiDir, 'index.ts');
     if (!fs.existsSync(componentIndexPath)) {
-      fs.writeFileSync(
-        componentIndexPath,
-        '// Export your UI components here\n'
-      );
-      console.log('📄 Created components/ui/index.ts');
+      const initialIndexContent = `// UNICRN Component Library
+// Components will be automatically added here when you run: npx unicrn add <component>
+
+`;
+      fs.writeFileSync(componentIndexPath, initialIndexContent);
+      console.log(`📄 Created empty ${config.componentsFolder}/ui/index.ts`);
+    }
+
+    // Create hooks index.ts file (empty initially)
+    const hooksIndexPath = path.join(hooksDir, 'index.ts');
+    if (!fs.existsSync(hooksIndexPath)) {
+      const initialHooksIndexContent = `// UNICRN Hooks Library
+// Hooks will be automatically added here when you run: npx unicrn add <hook>
+
+`;
+      fs.writeFileSync(hooksIndexPath, initialHooksIndexContent);
+      console.log(`📄 Created empty ${config.componentsFolder}/hooks/index.ts`);
+    }
+
+    // Copy unistyles.ts to components folder if it doesn't exist
+    const unistylesPath = path.join(componentsDir, 'unistyles.ts');
+    if (!fs.existsSync(unistylesPath)) {
+      try {
+        let copied = false;
+        
+        // First try to copy from local package installation
+        try {
+          const packageDir = path.dirname(require.resolve('unicrn/package.json'));
+          const sourceUnistylesPath = path.join(packageDir, 'lib', 'unistyles.ts');
+          
+          if (fs.existsSync(sourceUnistylesPath)) {
+            fs.copyFileSync(sourceUnistylesPath, unistylesPath);
+            console.log(`🎨 Copied unistyles.ts to ${config.componentsFolder}/`);
+            copied = true;
+          }
+        } catch {
+          // Package not found, try local development path
+        }
+        
+        // If not found, try from current directory (local development)
+        if (!copied) {
+          const localUnistylesPath = path.join(__dirname, '..', 'lib', 'unistyles.ts');
+          if (fs.existsSync(localUnistylesPath)) {
+            fs.copyFileSync(localUnistylesPath, unistylesPath);
+            console.log(`🎨 Copied unistyles.ts to ${config.componentsFolder}/`);
+            copied = true;
+          }
+        }
+        
+        // Final fallback to download
+        if (!copied) {
+          await downloadFile(`${config.componentsFolder}/unistyles.ts`, 'unistyles.ts');
+          console.log(`🎨 Downloaded unistyles.ts to ${config.componentsFolder}/`);
+        }
+      } catch {
+        console.log('⚠️  Could not copy unistyles.ts automatically.');
+        console.log(
+          '   Please visit: https://github.com/periabyte/unicrn/blob/main/unistyles.ts'
+        );
+        throw new Error(
+          'Failed to copy unistyles.ts. Please copy it manually.'
+        );
+      }
     }
 
     // Create/update root index.ts file for Expo entry point
     const rootIndexPath = path.join(process.cwd(), 'index.ts');
     const indexContent = `import 'expo-router/entry';
-import './unistyles.ts';
+import './${config.componentsFolder}/unistyles.ts';
 `;
 
     if (!fs.existsSync(rootIndexPath)) {
@@ -252,15 +373,16 @@ import './unistyles.ts';
         needsUpdate = true;
       }
 
-      if (!existingContent.includes("import './unistyles.ts'")) {
+      const unistylesImport = `import './${config.componentsFolder}/unistyles.ts';`;
+      if (!existingContent.includes(unistylesImport) && !existingContent.includes("import './unistyles.ts'")) {
         // Add after expo-router import if it exists
         if (updatedContent.includes("import 'expo-router/entry'")) {
           updatedContent = updatedContent.replace(
             "import 'expo-router/entry';",
-            "import 'expo-router/entry';\nimport './unistyles.ts';"
+            `import 'expo-router/entry';\n${unistylesImport}`
           );
         } else {
-          updatedContent = `import './unistyles.ts';\n` + updatedContent;
+          updatedContent = `${unistylesImport}\n` + updatedContent;
         }
         needsUpdate = true;
       }
@@ -271,63 +393,21 @@ import './unistyles.ts';
       }
     }
 
-    // Copy unistyles.ts if it doesn't exist
-    const unistylesPath = path.join(process.cwd(), 'unistyles.ts');
-    if (!fs.existsSync(unistylesPath)) {
-      try {
-        let copied = false;
-        
-        // First try to copy from local package installation
-        try {
-          const packageDir = path.dirname(require.resolve('unicrn/package.json'));
-          const sourceUnistylesPath = path.join(packageDir, 'unistyles.ts');
-          
-          if (fs.existsSync(sourceUnistylesPath)) {
-            fs.copyFileSync(sourceUnistylesPath, unistylesPath);
-            console.log('🎨 Copied unistyles.ts theme configuration');
-            copied = true;
-          }
-        } catch {
-          // Package not found, try local development path
-        }
-        
-        // If not found, try from current directory (local development)
-        if (!copied) {
-          const localUnistylesPath = path.join(__dirname, '..', 'unistyles.ts');
-          if (fs.existsSync(localUnistylesPath)) {
-            fs.copyFileSync(localUnistylesPath, unistylesPath);
-            console.log('🎨 Copied unistyles.ts theme configuration');
-            copied = true;
-          }
-        }
-        
-        // Final fallback to download
-        if (!copied) {
-          await downloadFile('unistyles.ts');
-          console.log('🎨 Downloaded unistyles.ts theme configuration');
-        }
-      } catch {
-        console.log('⚠️  Could not copy unistyles.ts automatically.');
-        console.log(
-          '   Please visit: https://github.com/periabyte/unicrn/blob/main/unistyles.ts'
-        );
-        throw new Error(
-          'Failed to copy unistyles.ts. Please copy it manually.'
-        );
-      }
-    }
-
     console.log('\n✅ Project initialized successfully!');
     console.log('\n📋 Next steps:');
     console.log(
       '1. Install dependencies: npm install react-native-unistyles react-native-reanimated expo-router'
     );
     console.log('2. Add components: unicrn add button card');
+    console.log('3. Add hooks: unicrn add usedisclose');
     console.log(
-      '3. Import in your app: import { Button } from "@/components/ui"'
+      `4. Import in your app: import { Button } from "./${config.componentsFolder}/ui"`
     );
     console.log(
-      '4. Make sure your package.json main field points to "index.ts"'
+      `5. Import hooks: import { useDisclose } from "./${config.componentsFolder}/hooks"`
+    );
+    console.log(
+      '6. Make sure your package.json main field points to "index.ts"'
     );
   } catch (error) {
     console.error('❌ Failed to initialize project:', error.message);
@@ -347,10 +427,18 @@ async function addComponent(componentName) {
   try {
     console.log(`📦 Adding ${component.name} component...`);
 
-    // Create components/ui directory if it doesn't exist
-    const uiDir = path.join(process.cwd(), 'components', 'ui');
+    // Load configuration and resolve paths
+    const config = loadConfig();
+    const componentsDir = path.join(process.cwd(), config.componentsFolder);
+    const uiDir = path.join(componentsDir, 'ui');
+    const hooksDir = path.join(componentsDir, 'hooks');
+    
     if (!fs.existsSync(uiDir)) {
       fs.mkdirSync(uiDir, { recursive: true });
+    }
+    
+    if (!fs.existsSync(hooksDir)) {
+      fs.mkdirSync(hooksDir, { recursive: true });
     }
 
     // Try to copy component files locally first, then download as fallback
@@ -359,11 +447,21 @@ async function addComponent(componentName) {
       try {
         let fileCopied = false;
         
+        // Update file path to use config-based components directory
+        let configFile;
+        if (file.includes('lib/components/')) {
+          configFile = file.replace('lib/components/', `${config.componentsFolder}/`);
+        } else if (file.includes('lib/hooks/')) {
+          configFile = file.replace('lib/hooks/', `${config.componentsFolder}/hooks/`);
+        } else {
+          configFile = file;
+        }
+        
         // First try to copy from local package installation
         try {
           const packageDir = path.dirname(require.resolve('unicrn/package.json'));
           const sourceFilePath = path.join(packageDir, file);
-          const targetFilePath = path.join(process.cwd(), file);
+          const targetFilePath = path.join(process.cwd(), configFile);
           
           if (fs.existsSync(sourceFilePath)) {
             // Create directory if it doesn't exist
@@ -384,7 +482,7 @@ async function addComponent(componentName) {
         if (!fileCopied) {
           const localFilePath = path.join(__dirname, '..', file);
           if (fs.existsSync(localFilePath)) {
-            const targetFilePath = path.join(process.cwd(), file);
+            const targetFilePath = path.join(process.cwd(), configFile);
             const targetDir = path.dirname(targetFilePath);
             if (!fs.existsSync(targetDir)) {
               fs.mkdirSync(targetDir, { recursive: true });
@@ -398,7 +496,7 @@ async function addComponent(componentName) {
         
         // Final fallback to download
         if (!fileCopied) {
-          await downloadFile(file);
+          await downloadFile(configFile, file);
           copySuccess = true;
         }
       } catch {
@@ -432,9 +530,10 @@ async function addComponent(componentName) {
   }
 }
 
-async function downloadFile(filePath) {
-  const url = `${BASE_URL}/${filePath}`;
-  const localPath = path.join(process.cwd(), filePath);
+async function downloadFile(localFilePath, sourceFilePath = null) {
+  const downloadPath = sourceFilePath || localFilePath;
+  const url = `${BASE_URL}/${downloadPath}`;
+  const localPath = path.join(process.cwd(), localFilePath);
 
   // Create directory if it doesn't exist
   const dir = path.dirname(localPath);
@@ -447,7 +546,7 @@ async function downloadFile(filePath) {
       .get(url, (response) => {
         if (response.statusCode !== 200) {
           reject(
-            new Error(`Failed to download ${filePath}: ${response.statusCode}`)
+            new Error(`Failed to download ${downloadPath}: ${response.statusCode}`)
           );
           return;
         }
@@ -468,35 +567,123 @@ async function downloadFile(filePath) {
   });
 }
 
-async function updateIndexFile() {
-  const indexPath = path.join(process.cwd(), 'components', 'ui', 'index.ts');
+async function removeComponent(componentName) {
+  const component = components[componentName.toLowerCase()];
 
-  if (!fs.existsSync(indexPath)) {
-    // Create new index file
-    const exports = Object.values(components)
-      .map((c) => `export * from './${c.name}';`)
-      .join('\n');
+  if (!component) {
+    console.error(`❌ Component "${componentName}" not found.`);
+    console.log(`Available components: ${Object.keys(components).join(', ')}`);
+    throw new Error(`Component "${componentName}" not found`);
+  }
 
-    fs.writeFileSync(indexPath, exports + '\n');
-  } else {
-    // Read existing index and add missing exports
-    const content = fs.readFileSync(indexPath, 'utf8');
-    const existingExports = new Set(
-      content
-        .match(/export \* from '\.\/(\w+)';/g)
-        ?.map((line) => line.match(/export \* from '\.\/(\w+)';/)[1]) || []
-    );
+  try {
+    console.log(`🗑️  Removing ${component.name} component...`);
 
-    const newExports = [];
-    Object.values(components).forEach((c) => {
-      if (!existingExports.has(c.name)) {
-        newExports.push(`export * from './${c.name}';`);
+    // Load configuration and resolve paths
+    const config = loadConfig();
+
+    // Remove component files
+    for (const file of component.files) {
+      let configFile;
+      if (file.includes('lib/components/')) {
+        configFile = file.replace('lib/components/', `${config.componentsFolder}/`);
+      } else if (file.includes('lib/hooks/')) {
+        configFile = file.replace('lib/hooks/', `${config.componentsFolder}/hooks/`);
+      } else {
+        configFile = file;
       }
-    });
-
-    if (newExports.length > 0) {
-      fs.appendFileSync(indexPath, newExports.join('\n') + '\n');
+      
+      const filePath = path.join(process.cwd(), configFile);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+        console.log(`🗑️  Removed ${configFile}`);
+      }
     }
+
+    // Update index.ts
+    await updateIndexFile();
+
+    console.log(`✅ Successfully removed ${component.name} component!`);
+  } catch (error) {
+    console.error(`❌ Failed to remove ${component.name}:`, error.message);
+    throw error;
+  }
+}
+
+async function updateIndexFile() {
+  // Load configuration and resolve paths
+  const config = loadConfig();
+  const uiDir = path.join(process.cwd(), config.componentsFolder, 'ui');
+  const hooksDir = path.join(process.cwd(), config.componentsFolder, 'hooks');
+  const uiIndexPath = path.join(uiDir, 'index.ts');
+  const hooksIndexPath = path.join(hooksDir, 'index.ts');
+
+  // Update UI components index
+  const existingComponentFiles = [];
+  if (fs.existsSync(uiDir)) {
+    const files = fs.readdirSync(uiDir);
+    existingComponentFiles.push(...files.filter(file => 
+      file.endsWith('.tsx') && file !== 'index.ts'
+    ));
+  }
+
+  // Map component files to proper exports (using simpler export * format)
+  const componentExports = {
+    'Avatar.tsx': "export * from './Avatar';",
+    'Badge.tsx': "export * from './Badge';", 
+    'Button.tsx': "export * from './Button';",
+    'Card.tsx': "export * from './Card';",
+    'Checkbox.tsx': "export * from './Checkbox';",
+    'Dialog.tsx': "export * from './Dialog';",
+    'Input.tsx': "export * from './Input';",
+    'OTPInput.tsx': "export * from './OTPInput';",
+    'Radio.tsx': "export * from './Radio';",
+    'Switch.tsx': "export * from './Switch';",
+    'Typography.tsx': "export * from './Typography';",
+  };
+
+  // Generate exports only for components that actually exist
+  const componentExportsContent = existingComponentFiles
+    .map(file => componentExports[file])
+    .filter(Boolean)
+    .join('\n');
+
+  const uiIndexContent = `// UNICRN Component Library
+// Components are automatically exported when added via: npx unicrn add <component>
+
+${componentExportsContent}`;
+
+  if (fs.existsSync(uiDir)) {
+    fs.writeFileSync(uiIndexPath, uiIndexContent);
+  }
+
+  // Update hooks index
+  const existingHookFiles = [];
+  if (fs.existsSync(hooksDir)) {
+    const files = fs.readdirSync(hooksDir);
+    existingHookFiles.push(...files.filter(file => 
+      file.endsWith('.ts') && file !== 'index.ts'
+    ));
+  }
+
+  // Map hook files to proper exports
+  const hookExports = {
+    'useDisclose.ts': "export * from './useDisclose';",
+  };
+
+  // Generate exports only for hooks that actually exist
+  const hookExportsContent = existingHookFiles
+    .map(file => hookExports[file])
+    .filter(Boolean)
+    .join('\n');
+
+  const hooksIndexContent = `// UNICRN Hooks Library
+// Hooks are automatically exported when added via: npx unicrn add <hook>
+
+${hookExportsContent}`;
+
+  if (fs.existsSync(hooksDir)) {
+    fs.writeFileSync(hooksIndexPath, hooksIndexContent);
   }
 }
 
@@ -526,15 +713,41 @@ async function setTheme(themeName) {
   }
 
   try {
-    // Download unistyles.ts with the selected theme
-    await downloadFile('unistyles.ts');
+    // Load configuration and resolve paths
+    const config = loadConfig();
+    const unistylesPath = `${config.componentsFolder}/unistyles.ts`;
+    
+    // Download unistyles.ts with the selected theme to the components folder
+    await downloadFile(unistylesPath, 'lib/unistyles.ts');
 
     console.log(`✅ Successfully set theme to "${theme.name}"!`);
-    console.log(`📁 Updated: unistyles.ts`);
+    console.log(`📁 Updated: ${unistylesPath}`);
   } catch (error) {
     console.error(`❌ Failed to set theme:`, error.message);
     throw error;
   }
+}
+
+// Default configuration
+const defaultConfig = {
+  "componentsFolder": "components"
+};
+
+// Load configuration from unicrn.config.json
+function loadConfig() {
+  const configPath = path.join(process.cwd(), 'unicrn.config.json');
+  
+  if (fs.existsSync(configPath)) {
+    try {
+      const configContent = fs.readFileSync(configPath, 'utf8');
+      return { ...defaultConfig, ...JSON.parse(configContent) };
+    } catch {
+      console.warn('⚠️  Failed to parse unicrn.config.json, using defaults');
+      return defaultConfig;
+    }
+  }
+  
+  return defaultConfig;
 }
 
 program.parse();
