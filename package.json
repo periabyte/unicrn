@@ -1,7 +1,7 @@
 {
   "name": "unicrn",
   "description": "CLI tool for adding React Native UI components inspired by shadcn/ui, built with Unistyles",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "private": false,
   "bin": {
     "unicrn": "bin/unicrn.js"
