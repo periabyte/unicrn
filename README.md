@@ -1,5 +1,7 @@
 # UNICRN Component Library
 
+UNICRN stands for Unistyles + Components + React Native
+
 A modern React Native component library built with Unistyles 3.0, featuring beautiful, customizable components and hooks with performance optimization. Install components and hooks individually via CLI for optimal bundle size.
 
 ## Features
