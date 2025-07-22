@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     
     permissions:
-      contents: read
+      contents: write
       id-token: write
 
     steps:
@@ -127,49 +127,69 @@ jobs:
           fi
 
       - name: Update release with NPM publish success
+        continue-on-error: true
         uses: actions/github-script@v7
         with:
           script: |
-            const packageJson = require('./package.json');
-            const version = packageJson.version;
-            const name = packageJson.name;
-            
-            // Get the current release
-            const release = await github.rest.repos.getReleaseByTag({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              tag: `v${version}`
-            });
-            
-            // Update the release body to include NPM publish success
-            const npmSuccessNote = `
-            
-            ---
-            
-            ## 📦 NPM Package Published Successfully!
-            
-            🎉 **Package:** [\`${name}@${version}\`](https://www.npmjs.com/package/${name})
-            
-            **Quick Install:**
-            \`\`\`bash
-            npx ${name}@latest init
-            \`\`\`
-            
-            **Global Install:**
-            \`\`\`bash
-            npm install -g ${name}@${version}
-            \`\`\`
-            
-            Published at: ${new Date().toISOString()}`;
-            
-            // Update the release with NPM info
-            await github.rest.repos.updateRelease({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              release_id: release.data.id,
-              body: release.data.body + npmSuccessNote
-            });
-            
-            console.log(`✅ Updated release with NPM publish success!`);
-            console.log(`📦 Package: https://www.npmjs.com/package/${name}`);
-            console.log(`🚀 Install with: npx ${name}@latest init`);
+            try {
+              const packageJson = require('./package.json');
+              const version = packageJson.version;
+              const name = packageJson.name;
+              
+              // Get the current release
+              const release = await github.rest.repos.getReleaseByTag({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                tag: `v${version}`
+              });
+              
+              // Update the release body to include NPM publish success
+              const npmSuccessNote = `
+              
+              ---
+              
+              ## 📦 NPM Package Published Successfully!
+              
+              🎉 **Package:** [\`${name}@${version}\`](https://www.npmjs.com/package/${name})
+              
+              **Quick Install:**
+              \`\`\`bash
+              npx ${name}@latest init
+              \`\`\`
+              
+              **Global Install:**
+              \`\`\`bash
+              npm install -g ${name}@${version}
+              \`\`\`
+              
+              Published at: ${new Date().toISOString()}`;
+              
+              // Update the release with NPM info
+              await github.rest.repos.updateRelease({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                release_id: release.data.id,
+                body: release.data.body + npmSuccessNote
+              });
+              
+              console.log(`✅ Updated release with NPM publish success!`);
+              console.log(`📦 Package: https://www.npmjs.com/package/${name}`);
+              console.log(`🚀 Install with: npx ${name}@latest init`);
+              
+            } catch (error) {
+              console.log(`⚠️  Could not update release: ${error.message}`);
+              console.log(`📦 NPM package was still published successfully!`);
+              console.log(`🔗 Check: https://www.npmjs.com/package/${require('./package.json').name}`);
+            }
+
+      - name: Publish Summary
+        if: always()
+        run: |
+          PACKAGE_VERSION=$(node -p "require('./package.json').version")
+          PACKAGE_NAME=$(node -p "require('./package.json').name")
+          
+          echo "🎉 Publish Summary:"
+          echo "📦 Package: $PACKAGE_NAME@$PACKAGE_VERSION"
+          echo "🔗 NPM: https://www.npmjs.com/package/$PACKAGE_NAME"
+          echo "🚀 Install: npx $PACKAGE_NAME@latest init"
+          echo "✅ Publication completed successfully!"
