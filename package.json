@@ -8,8 +8,7 @@
   },
   "files": [
     "bin/",
-    "components/",
-    "unistyles.ts",
+    "lib/",
     "README.md"
   ],
   "keywords": [
